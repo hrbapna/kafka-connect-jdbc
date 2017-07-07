@@ -31,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+
 import io.confluent.connect.jdbc.sink.metadata.FieldsMetadata;
 import io.confluent.connect.jdbc.sink.metadata.SchemaPair;
 import io.confluent.connect.jdbc.util.DateTimeUtils;
@@ -162,8 +163,10 @@ public class PreparedStatementBinder {
           case BOOLEAN:
             statement.setBoolean(index, (Boolean) value);
             break;
+          case ARRAY:
           case STRING:
-            statement.setObject(index,(Object)value,Types.OTHER);
+//            statement.setString(index, (String) value);
+            statement.setObject(index,value, Types.OTHER);
             break;
           case BYTES:
             final byte[] bytes;

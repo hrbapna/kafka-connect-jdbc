@@ -24,16 +24,15 @@ import org.apache.kafka.connect.data.Timestamp;
 import org.apache.kafka.connect.errors.ConnectException;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.sql.*;
+import java.util.*;
 
 import javax.xml.bind.DatatypeConverter;
 
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
 import io.confluent.connect.jdbc.util.DateTimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.Transform;
 import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.joinToBuilder;
@@ -41,6 +40,7 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesTo
 
 public abstract class DbDialect {
 
+  private static final Logger log = LoggerFactory.getLogger(DbDialect.class);
   private final String escapeStart;
   private final String escapeEnd;
 
@@ -82,10 +82,85 @@ public abstract class DbDialect {
     return builder.toString();
   }
 
-
   public String getUpsertQuery(final String table, final Collection<String> keyColumns, final Collection<String> columns) {
     throw new UnsupportedOperationException();
   }
+
+  public void getOrCreateEnums(Connection connection) {
+    try {
+
+      Connection sourceConnection = null;
+      Properties connectionProps = new Properties();
+      connectionProps.put("user", "postgres");
+      connectionProps.put("password", "");
+
+      sourceConnection = DriverManager.getConnection("jdbc:postgresql://localhost/cu_config_restdev",connectionProps);
+
+      System.out.println("Connected to database");
+
+      ResultSet results = getEnumsFromSource(sourceConnection);
+//      log.info("results: " + results);
+      while (results.next()) {
+        String enumName = results.getString(1);
+        String values = results.getString(2);
+        createEnumsInSink(connection,enumName, values);
+
+//        StringBuilder values = new StringBuilder();
+//        String[] valueArray = results.getString(2).split("|");
+//        if (valueArray.length > 0) {
+//          for (String n:valueArray) {
+//            values.append(n);
+//          }
+//          createEnumsInSink(connection,enumName, values.substring(0, values.lastIndexOf(",")));
+//        }
+      }
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  public ResultSet getEnumsFromSource(Connection connection) {
+    Statement stmt = null;
+    String query = null;
+    ResultSet rs = null;
+    try {
+      stmt = connection.createStatement();
+      query = "SELECT t.typname, string_agg(''''||e.enumlabel||'''', ',' ORDER BY e.enumsortorder) AS enum_labels\n" +
+              "FROM   pg_catalog.pg_type t \n" +
+              "JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace \n" +
+              "JOIN   pg_catalog.pg_enum e ON t.oid = e.enumtypid  \n" +
+              "GROUP  BY 1";
+      rs = stmt.executeQuery(query);
+    }
+    catch (Exception e) {
+      log.info("Could not fetch enums");
+      e.printStackTrace();
+    }
+    return rs;
+  }
+
+  public void createEnumsInSink(Connection connection, String enumName, String values) {
+    log.info("Enum name: " + enumName);
+    try {
+      StringBuilder queryBuilder = new StringBuilder();
+      Statement stmt = connection.createStatement();
+//      String query = "CREATE TYPE " + enumName + " AS ENUM (" + values + ")";
+      String query = "DO $$\n" +
+              "BEGIN\n" +
+              "    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '" + enumName +"') THEN\n" +
+              "        CREATE TYPE " + enumName + " AS ENUM (" + values + ");\n" +
+              "    END IF;\n" +
+              "END$$;";
+
+      stmt.executeUpdate(query);
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+    return;
+  }
+
 
   public String getCreateQuery(String tableName, Collection<SinkRecordField> fields) {
     final List<String> pkFieldNames = extractPrimaryKeyFieldNames(fields);
@@ -138,6 +213,8 @@ public abstract class DbDialect {
     builder.append(escaped(f.name()));
     builder.append(" ");
     builder.append(getSqlType(f.schemaName(), f.schemaParameters(), f.schemaType()));
+//    String sqltype = getSqlType(f.schemaName(), f.schemaParameters(), f.schemaType());
+//    builder.append(sqltype);
     if (f.defaultValue() != null) {
       builder.append(" DEFAULT ");
       formatColumnValue(builder, f.schemaName(), f.schemaParameters(), f.schemaType(), f.defaultValue());

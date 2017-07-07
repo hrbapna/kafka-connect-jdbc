@@ -45,14 +45,6 @@ public class PostgreSqlDialect extends DbDialect {
   protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
     if (schemaName != null) {
       switch (schemaName) {
-        case PostgresTypes.INTEGER_ARRAY_LOGICAL_NAME:
-          return "INTEGER[]";
-        case PostgresTypes.TEXT_ARRAY_LOGICAL_NAME:
-          return "TEXT[]";
-        case PostgresTypes.JSONB_LOGICAL_NAME:
-          return "JSONB";
-        case PostgresTypes.POINT_LOGICAL_NAME:
-          return "POINT";
         case Decimal.LOGICAL_NAME:
           return "DECIMAL";
         case Date.LOGICAL_NAME:
@@ -61,6 +53,18 @@ public class PostgreSqlDialect extends DbDialect {
           return "TIME";
         case Timestamp.LOGICAL_NAME:
           return "TIMESTAMP";
+        case PostgresTypes.INTEGER_ARRAY_LOGICAL_NAME:
+          return "INTEGER[]";
+        case PostgresTypes.TEXT_ARRAY_LOGICAL_NAME:
+          return "TEXT[]";
+        case PostgresTypes.JSONB_LOGICAL_NAME:
+          return "JSONB";
+        case PostgresTypes.POINT_LOGICAL_NAME:
+          return "POINT";
+        case PostgresTypes.INET_LOGICAL_NAME:
+          return "INET";
+        case PostgresTypes.CIDR_LOGICAL_NAME:
+          return "CIDR";
       }
     }
     switch (type) {
@@ -104,15 +108,15 @@ public class PostgreSqlDialect extends DbDialect {
       builder.append(") DO NOTHING");
     }
     joinToBuilder(
-        builder,
-        ",",
-        cols,
-        new StringBuilderUtil.Transform<String>() {
-          @Override
-          public void apply(StringBuilder builder, String col) {
-            builder.append(escaped(col)).append("=EXCLUDED.").append(escaped(col));
-          }
-        }
+            builder,
+            ",",
+            cols,
+            new StringBuilderUtil.Transform<String>() {
+              @Override
+              public void apply(StringBuilder builder, String col) {
+                builder.append(escaped(col)).append("=EXCLUDED.").append(escaped(col));
+              }
+            }
     );
     return builder.toString();
   }

@@ -217,7 +217,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
                 DateTimeUtils.formatUtcTimestamp(endTime));
     }
 
-    log.info("Final query is: " + stmt.toString()+"\n\n");
+    log.info("Final Single query is: " + stmt.toString()+"\n\n");
 
     return stmt.executeQuery();
   }
@@ -227,7 +227,6 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
     final Struct record = DataConverter.convertRecord(schema, resultSet, mapNumerics, anonymizeMap);
     offset = extractOffset(schema, record);
     // TODO: Key?
-    log.info("Extract record called: " + record.toString());
     final String topic;
     final Map<String, String> partition;
     switch (mode) {

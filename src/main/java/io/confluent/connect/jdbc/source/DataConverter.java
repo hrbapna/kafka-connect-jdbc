@@ -16,6 +16,7 @@
 
 package io.confluent.connect.jdbc.source;
 
+import javafx.geometry.Pos;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
@@ -28,15 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.SQLXML;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Map;
+import java.sql.*;
+import java.util.*;
 
 import io.confluent.connect.jdbc.util.DateTimeUtils;
 
@@ -83,7 +77,6 @@ public class DataConverter {
     for (int col = 1; col <= metadata.getColumnCount(); col++) {
       try {
         if (anonymizeMap!=null && anonymizeMap.keySet().contains(metadata.getColumnLabel(col))) {
-          log.info("About to anonymize");
           convertFieldValueAnonymize(resultSet, col, metadata.getColumnType(col), struct,
                   metadata.getColumnLabel(col), mapNumerics,anonymizeMap.get(metadata.getColumnLabel(col)));
         }
@@ -326,27 +319,74 @@ public class DataConverter {
 
       case Types.ARRAY:
         if(metadata.getColumnTypeName(col).equals("_text")) {
+
           SchemaBuilder textArrayBuilder = PostgresTypes.TextArrayBuilder();
-          builder.field(fieldName, textArrayBuilder.optional().build());
+          if(optional) {
+            builder.field(fieldName, textArrayBuilder.optional().build());
+          }
+          else{
+            builder.field(fieldName, textArrayBuilder.build());
+          }
           break;
         }
         else if(metadata.getColumnTypeName(col).equals("_int4")){
           SchemaBuilder intArrayBuilder = PostgresTypes.IntArrayBuilder();
-          builder.field(fieldName,intArrayBuilder.optional().build());
+          if(optional) {
+            builder.field(fieldName, intArrayBuilder.optional().build());
+          }
+          else{
+            builder.field(fieldName, intArrayBuilder.build());
+          }
           break;
         }
 
+
+        /*if (optional) {
+          builder.field(fieldName, Schema.OPTIONAL_BYTES_SCHEMA);
+        } else {
+          builder.field(fieldName, Schema.BYTES_SCHEMA);
+        }*/
       case Types.JAVA_OBJECT:
       case Types.OTHER:
-        if(metadata.getColumnTypeName(col).equals("jsonb")){
-
+        if(metadata.getColumnTypeName(col).equals("jsonb") || metadata.getColumnTypeName(col).equals("json") ){
           SchemaBuilder jsonBuilder = PostgresTypes.JsonbBuilder();
-          builder.field(fieldName,jsonBuilder.optional().build());
+          if(optional) {
+            builder.field(fieldName, jsonBuilder.optional().build());
+          }
+          else{
+            builder.field(fieldName, jsonBuilder.build());
+          }
           break;
         }
         else if(metadata.getColumnTypeName(col).equals("point")){
           SchemaBuilder pointBuilder = PostgresTypes.PointBuilder();
-          builder.field(fieldName,pointBuilder.optional().build());
+          if(optional) {
+            builder.field(fieldName, pointBuilder.optional().build());
+          }
+          else{
+            builder.field(fieldName, pointBuilder.build());
+          }
+          break;
+        }
+        else if(metadata.getColumnTypeName(col).equals("cidr")){
+
+          SchemaBuilder cidrBuilder = PostgresTypes.CidrBuilder();
+          if(optional) {
+            builder.field(fieldName, cidrBuilder.optional().build());
+          }
+          else{
+            builder.field(fieldName, cidrBuilder.build());
+          }
+          break;
+        }
+        else if(metadata.getColumnTypeName(col).equals("inet")){
+          SchemaBuilder inetBuilder = PostgresTypes.InetBuilder();
+          if(optional) {
+            builder.field(fieldName, inetBuilder.optional().build());
+          }
+          else{
+            builder.field(fieldName, inetBuilder.build());
+          }
           break;
         }
       case Types.DISTINCT:
@@ -389,7 +429,6 @@ public class DataConverter {
          * elasticsearch-jdbc plugin for an example of how this is handled
          */
         //colValue = resultSet.getByte(col);
-
         colValue =  resultSet.getBoolean(col) ;
 
         break;
@@ -582,7 +621,6 @@ public class DataConverter {
                                         Struct struct, String fieldName, boolean mapNumerics,String transformer)
           throws SQLException, IOException {
     final Object colValue;
-    log.info("Col type is: " + colType);
     switch (colType) {
       case Types.NULL: {
         colValue = null;

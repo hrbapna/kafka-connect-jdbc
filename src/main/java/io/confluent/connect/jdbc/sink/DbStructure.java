@@ -84,6 +84,10 @@ public class DbStructure {
     if (!config.autoCreate) {
       throw new ConnectException(String.format("Table %s is missing and auto-creation is disabled", tableName));
     }
+    log.info("DB Connection: ");
+
+//    dbDialect.getOrCreateEnums(connection);
+
     final String sql = dbDialect.getCreateQuery(tableName, fieldsMetadata.allFields.values());
     log.info("Creating table:{} with SQL: {}", tableName, sql);
     try (Statement statement = connection.createStatement()) {

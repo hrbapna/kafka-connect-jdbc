@@ -122,11 +122,11 @@ public class JdbcSourceTask extends SourceTask {
     boolean validateNonNulls
         = config.getBoolean(JdbcSourceTaskConfig.VALIDATE_NON_NULL_CONFIG);
 
-    log.info("Default Incrementing Column: "+incrementingColumn);
-    log.info("Default Timestamp Column: "+timestampColumn);
+//    log.info("Default Incrementing Column: "+incrementingColumn);
+//    log.info("Default Timestamp Column: "+timestampColumn);
     for (String tableOrQuery : tablesOrQuery) {
       String tableMode = mode;
-      try{
+      try {
         tableMode = config.getString(tableOrQuery+"."+JdbcSourceTaskConfig.MODE_CONFIG);
       }
       catch (Exception e){
@@ -140,7 +140,7 @@ public class JdbcSourceTask extends SourceTask {
       try {
         String defaultAnonymizer = config.getString(JdbcSourceTaskConfig.ANONYMIZE+".default");
         String anonymizeKey = tableOrQuery +"."+JdbcSourceTaskConfig.ANONYMIZE +".column.name";
-        log.info("anonymize key: " + anonymizeKey);
+
         String colsToAnonymizeconfig = config.getString(anonymizeKey);
         ArrayList<String> anonymizeList = new  ArrayList<String>(Arrays.asList(colsToAnonymizeconfig.split(",")));
         anonymizeMap = new HashMap<String,String>();
@@ -152,8 +152,7 @@ public class JdbcSourceTask extends SourceTask {
           }
         }
       } catch (Exception e) {
-        log.info("Anonymization information not found.");
-        e.printStackTrace();
+//        log.info("Anonymization information not found for: " + tableOrQuery);
       }
 
       final Map<String, String> partition;
@@ -181,12 +180,12 @@ public class JdbcSourceTask extends SourceTask {
         tableQueue.add(new BulkTableQuerier(queryMode, tableOrQuery, schemaPattern,
                 topicPrefix, mapNumerics,anonymizeMap));
       } else if (tableMode.equals(JdbcSourceTaskConfig.MODE_INCREMENTING)) {
-        log.info("Incrementing column info: "+tableOrQuery+"."+JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
+//        log.info("Incrementing column info: "+tableOrQuery+"."+JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
         String tableIncrementingColumn=incrementingColumn;
         try {
           tableIncrementingColumn = config.getString(tableOrQuery + "." + JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
         } catch (Exception e){
-          log.info("Table Specific Incrementing column not Defined. Reverting to default");
+//          log.info("Table Specific Incrementing column not Defined. Reverting to default");
         }
         if(validateNonNulls)
           validateNonNullable(mode, schemaPattern, tableOrQuery, tableIncrementingColumn, timestampColumn);
@@ -194,12 +193,12 @@ public class JdbcSourceTask extends SourceTask {
             queryMode, tableOrQuery, topicPrefix, null, tableIncrementingColumn, offset,
                 timestampDelayInterval, schemaPattern, mapNumerics,anonymizeMap));
       } else if (tableMode.equals(JdbcSourceTaskConfig.MODE_TIMESTAMP)) {
-        log.info("Timestamp column info: "+tableOrQuery+"."+JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+//        log.info("Timestamp column info: "+tableOrQuery+"."+JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
         String tableTimestampColumn = timestampColumn;
         try {
           tableTimestampColumn = config.getString(tableOrQuery + "." + JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
         } catch (Exception e){
-          log.info("Table specific timestamp column not defined. Reverting to default");
+//          log.info("Table specific timestamp column not defined. Reverting to default");
         }
         if(validateNonNulls)
           validateNonNullable(mode, schemaPattern, tableOrQuery, incrementingColumn,tableTimestampColumn);
@@ -208,9 +207,9 @@ public class JdbcSourceTask extends SourceTask {
                 timestampDelayInterval, schemaPattern, mapNumerics,anonymizeMap));
       } else if (tableMode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
 
-        log.info("Entered timestamp+incrementing mode");
-        log.info("Incrementing column info: "+tableOrQuery+"."+JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
-        log.info("Timestamp column info: "+tableOrQuery+"."+JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+//        log.info("Entered timestamp+incrementing mode");
+//        log.info("Incrementing column info: "+tableOrQuery+"."+JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
+//        log.info("Timestamp column info: "+tableOrQuery+"."+JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
 
         String tableIncrementingColumn = incrementingColumn;
         String tableTimestampColumn = timestampColumn;
@@ -218,13 +217,13 @@ public class JdbcSourceTask extends SourceTask {
         try {
           tableIncrementingColumn = config.getString(tableOrQuery + "." + JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
         } catch (Exception e){
-          log.info("Table specific incrementing column not defined. Reverting to default");
+//          log.info("Table specific incrementing column not defined. Reverting to default");
         }
 
         try {
           tableTimestampColumn = config.getString(tableOrQuery + "." + JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
         } catch (Exception e){
-          log.info("Table specific timestamp column not defined. Reverting to default");
+//          log.info("Table specific timestamp column not defined. Reverting to default");
         }
         if(validateNonNulls)
           validateNonNullable(mode, schemaPattern, tableOrQuery, tableIncrementingColumn, tableTimestampColumn);

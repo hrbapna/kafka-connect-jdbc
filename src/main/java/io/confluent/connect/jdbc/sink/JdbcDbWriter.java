@@ -28,7 +28,12 @@ import java.util.Map;
 import io.confluent.connect.jdbc.sink.dialect.DbDialect;
 import io.confluent.connect.jdbc.util.CachedConnectionProvider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class JdbcDbWriter {
+
+  private static final Logger log = LoggerFactory.getLogger(JdbcDbWriter.class);
 
   private final JdbcSinkConfig config;
   private final DbDialect dbDialect;
